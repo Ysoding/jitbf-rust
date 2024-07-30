@@ -242,7 +242,14 @@ fn interpreter(ops: &Ops) {
                 }
                 ip += 1;
             }
-            OpKind::Input => panic!("not implemented"),
+            OpKind::Input => {
+                let mut buffer = [0; 1];
+                io::stdin()
+                    .read_exact(&mut buffer)
+                    .expect("Failed to read input");
+                memory.items[head] = buffer[0];
+                ip += 1;
+            }
             OpKind::Output => {
                 for _ in 0..op.operand {
                     print!("{}", memory.items[head] as char);
