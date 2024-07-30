@@ -1,4 +1,10 @@
-use std::{collections::VecDeque, fmt::Debug, fs::File, io::Read, process};
+use std::{
+    collections::VecDeque,
+    fmt::Debug,
+    fs::File,
+    io::{self, Read},
+    process,
+};
 
 use clap::Parser;
 
@@ -68,7 +74,15 @@ fn main() {
             }
         }
     }
-    interpreter(&ops)
+    // interpreter(&ops)
+
+    match jit_compile(&ops) {
+        Ok(code) => {
+            let mut memory = vec![0u8; 10 * 1000 * 1000];
+            code(&mut memory);
+        }
+        Err(e) => eprintln!("Error: {}", e),
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -251,4 +265,44 @@ fn interpreter(ops: &Ops) {
             }
         }
     }
+}
+
+type AsmFuncType = extern "C" fn(*mut Vec<u8>);
+
+fn jit_compile(ops: &Ops) -> Result<AsmFuncType, io::Error> {
+    let mut sb = Vec::new();
+
+    for op in &ops.items {
+        match op.kind {
+            OpKind::Inc => sb.extend_from_slice(&[0xFE, 0x07]), // inc byte [rdi]
+            _ => panic!("not implemented"),
+        }
+    }
+
+    sb.push(0xC3); // ret
+
+    let data = sb;
+    let addr = unsafe {
+        libc::mmap(
+            std::ptr::null_mut(),
+            data.len(),
+            libc::PROT_READ | libc::PROT_WRITE | libc::PROT_EXEC,
+            libc::MAP_PRIVATE | libc::MAP_ANON,
+            -1,
+            0,
+        )
+    };
+
+    if addr == libc::MAP_FAILED {
+        panic!("{}", io::Error::last_os_error());
+    }
+
+    unsafe {
+        std::ptr::copy_nonoverlapping(data.as_ptr(), addr as *mut u8, data.len());
+    }
+
+    //     void (*run)(void *memory);
+    let code: AsmFuncType = unsafe { std::mem::transmute(addr) };
+
+    Ok(code)
 }
