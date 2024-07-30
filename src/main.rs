@@ -74,15 +74,15 @@ fn main() {
             }
         }
     }
-    // interpreter(&ops)
+    interpreter(&ops)
 
-    match jit_compile(&ops) {
-        Ok(code) => {
-            let mut memory = vec![0u8; 10 * 1000 * 1000];
-            code(&mut memory);
-        }
-        Err(e) => eprintln!("Error: {}", e),
-    }
+    // match jit_compile(&ops) {
+    //     Ok(code) => {
+    //         let mut memory = vec![0u8; 10 * 1000 * 1000];
+    //         code(&mut memory);
+    //     }
+    //     Err(e) => eprintln!("Error: {}", e),
+    // }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
