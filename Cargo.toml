@@ -6,3 +6,6 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.5.11", features = ["derive"] }
 libc = "0.2.155"
+
+[profile.dev]
+debug = true
